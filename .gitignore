@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+venv/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# Data and Cache
+.ipynb_checkpoints
+.kaggle/
+.kagglehub/
+*.log
+*.csv
+*.zip
+
+# Visual Results (Keep them for the README)
+# !hallucination_frontier.png
+# !noisy_sample.png
+
+# Workspace specifics
+.vscode/
+.idea/
+.gemini/

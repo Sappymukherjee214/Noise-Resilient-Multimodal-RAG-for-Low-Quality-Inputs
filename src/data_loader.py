@@ -13,20 +13,27 @@ class FashionDataLoader:
         self.images_dir = None
 
     def download_and_init(self):
-        """Downloads the dataset using kagglehub and initializes indices."""
-        print("[System]: Downloading dataset (paramaggarwal/fashion-product-images-small)...")
-        self.dataset_path = kagglehub.dataset_download("paramaggarwal/fashion-product-images-small")
-        print(f"[System]: Dataset located at: {self.dataset_path}")
-        
-        # In current version of this dataset, paths are typically:
-        # {dataset_path}/styles.csv
-        # {dataset_path}/images/
-        csv_path = os.path.join(self.dataset_path, "styles.csv")
-        self.images_dir = os.path.join(self.dataset_path, "images")
-        
-        # Load metadata, handling potential bad lines in this specific dataset
-        self.styles_df = pd.read_csv(csv_path, on_bad_lines='skip')
-        print(f"[System]: Loaded {len(self.styles_df)} product records.")
+        """Downloads the Kaggle dataset if needed and initializes metadata."""
+        import kagglehub
+        try:
+            self.dataset_path = kagglehub.dataset_download("paramaggarwal/fashion-product-images-small")
+            print(f"[System]: Dataset located at: {self.dataset_path}")
+            
+            # Sub-path for standard metadata and images
+            csv_path = os.path.join(self.dataset_path, "styles.csv")
+            self.images_dir = os.path.join(self.dataset_path, "images")
+            
+            # Error handling for malformed CSV rows (common in this fashion dataset)
+            self.styles_df = pd.read_csv(csv_path, on_bad_lines='skip')
+            
+            # PRODUCTION-LITE OVERRIDE: Protects free-tier cloud disk space
+            if os.environ.get("IS_PRODUCTION", "False").lower() == "true":
+                print(f"[Warning]: PRODUCTION_LITE_MODE active. Subsetting dataset to 1,000 items.")
+                self.styles_df = self.styles_df.head(1000)
+                
+            print(f"[System]: Loaded {len(self.styles_df)} product records.")
+        except Exception as e:
+            print(f"[Error]: Failure in dataset initialization: {e}")
 
     def get_sample(self, index: int = 0) -> Tuple[str, Image.Image, Dict]:
         """Retrieves a specific sample: (Description, Image, Metadata)."""

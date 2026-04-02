@@ -20,6 +20,8 @@ from retrieval import RobustRetriever
 from data_loader import FashionDataLoader
 from mcl import MetaCognitiveLoop, LatentDenoisingBridge
 
+import threading
+
 app = FastAPI(title="NR-M-RAG Sentinel Dashboard")
 
 # Enable CORS for Vite frontend
@@ -33,11 +35,19 @@ app.add_middleware(
 
 # Shared Research Components
 loader = FashionDataLoader()
-loader.download_and_init()
 fusion = AdaptiveMultimodalFusion()
 retriever = RobustRetriever()
 mcl = MetaCognitiveLoop()
 bridge = LatentDenoisingBridge()
+
+# ASYNC CLOUD LOADING: Prevents Render Port Scan Timeout
+def background_load():
+    print("[System]: Beginning Asynchronous Cloud Initialization...")
+    loader.download_and_init()
+    print("[System]: Cloud Initialization Complete. Dataset ready.")
+
+# Fire and forget the heavy download/init
+threading.Thread(target=background_load, daemon=True).start()
 
 @app.get("/")
 async def get_index():

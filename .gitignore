@@ -36,6 +36,12 @@ ENV/
 # !hallucination_frontier.png
 # !noisy_sample.png
 
+# Web Artifacts
+web/node_modules/
+web/dist/
+web/npm-debug.log*
+web/.env
+
 # Workspace specifics
 .vscode/
 .idea/

@@ -11,3 +11,6 @@ kagglehub
 matplotlib
 scipy
 tqdm
+fastapi
+uvicorn
+python-multipart

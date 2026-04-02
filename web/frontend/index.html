@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NR-M-RAG Sentinel Dashboard</title>
+    <!-- Use standard Tailwind-like styling via CDN for simplicity in this demo environment -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0a0e14; color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; transition: transform 0.3s ease; }
+        .glass-card:hover { transform: translateY(-4px); border-color: #06b6d4; }
+        .main-gradient { background: radial-gradient(circle at 50% -20%, #1e1b4b, #0a0e14); min-height: 100vh; }
+        .accent-text { background: linear-gradient(to right, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .status-safe { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .status-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .noise-slider { -webkit-appearance: none; width: 100%; height: 6px; background: #1e293b; border-radius: 9999px; outline: none; }
+        .noise-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #06b6d4; border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(6, 182, 212, 0.6); }
+    </style>
+</head>
+<body class="main-gradient p-8">
+    <div id="root">
+        <!-- React App will mount here -->
+    </div>
+
+    <!-- React and Babel for single-file demo -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        function App() {
+            const [text, setText] = useState('Navy Blue Polo Shirt');
+            const [sigma, setSigma] = useState(0.2);
+            const [image, setImage] = useState(null);
+            const [preview, setPreview] = useState(null);
+            const [results, setResults] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [samples, setSamples] = useState([]);
+
+            useEffect(() => {
+                fetch('/samples')
+                    .then(r => r.json())
+                    .then(data => setSamples(data))
+                    .catch(e => console.error("API Offline?"));
+            }, []);
+
+            const runInference = async () => {
+                setLoading(true);
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('sigma', sigma);
+                if (image) formData.append('image', image);
+
+                try {
+                    const response = await fetch('/process', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    setResults(data);
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const triggerFileUpload = () => document.getElementById("fileInput").click();
+
+            return (
+                <div className="max-w-7xl mx-auto space-y-8">
+                    <header className="flex justify-between items-center bg-black/20 p-4 rounded-2xl backdrop-blur-md border border-white/5">
+                        <div className="text-2xl font-extrabold accent-text tracking-tighter">SENTINEL-NR-M-RAG</div>
+                        <div className="flex gap-4 items-center">
+                            <span className="text-xs text-slate-500 font-mono tracking-widest uppercase">Research v1.0.4</span>
+                            <div className="status-safe px-4 py-1 rounded-full text-xs font-bold tracking-widest border border-emerald-500/30">ENGINE_STABLE</div>
+                        </div>
+                    </header>
+
+                    <main class="grid lg:grid-cols-12 gap-8">
+                        {/* LEFT: Query Config Section */}
+                        <div className="lg:col-span-4 space-y-6">
+                            <section className="glass-card p-6 flex flex-col gap-6">
+                                <h3 className="text-lg font-bold flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                    MULTIMODAL QUERY CONFIG
+                                </h3>
+                                
+                                <div class="space-y-2">
+                                    <label class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest">Latent Intent (Text)</label>
+                                    <textarea 
+                                        className="w-100 w-full min-h-[100px] bg-black/40 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                                        value={text} 
+                                        onChange={e => setText(e.target.value)}
+                                        placeholder="Describe the fashion target..."
+                                    />
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <label class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest">Stochastic Distortion (SIGMA)</label>
+                                        <span class="text-xs font-mono text-cyan-400 font-bold">{sigma}</span>
+                                    </div>
+                                    <input 
+                                        type="range" min="0" max="1" step="0.1" 
+                                        className="noise-slider"
+                                        value={sigma} onChange={e => setSigma(parseFloat(e.target.value))} 
+                                    />
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest">Visual Modality Grounding</label>
+                                    <div 
+                                        onClick={triggerFileUpload}
+                                        className="relative group border-2 border-dashed border-slate-800 hover:border-cyan-500/50 rounded-2xl p-8 text-center transition-all cursor-pointer bg-black/20"
+                                    >
+                                        <input 
+                                            type="file" id="fileInput" 
+                                            className="hidden" 
+                                            onChange={e => {
+                                                const file = e.target.files[0];
+                                                setImage(file);
+                                                setPreview(URL.createObjectURL(file));
+                                            }}
+                                        />
+                                        {preview ? (
+                                            <img src={preview} className="w-full rounded-lg shadow-2xl ring-1 ring-white/10" />
+                                        ) : (
+                                            <div class="text-slate-500 space-y-2">
+                                                <div class="text-3xl">📷</div>
+                                                <div class="text-xs font-semibold">Drop Clean Sample Image</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={runInference}
+                                    disabled={loading}
+                                    className={`w-full py-4 rounded-2xl font-bold tracking-widest transition-all ${loading ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95'}`}
+                                >
+                                    {loading ? "FUSING EMBEDDINGS..." : "EXECUTE RAG SENTINEL"}
+                                </button>
+                            </section>
+                        </div>
+
+                        {/* RIGHT: Analysis results Section */}
+                        <div className="lg:col-span-8 space-y-8">
+                            <motion.section 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass-card p-6 min-h-[400px] flex flex-col"
+                            >
+                                <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                                    <h3 class="text-lg font-bold flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
+                                        RETRIEVAL DIAGNOSTICS
+                                    </h3>
+                                    {results && (
+                                        <div className={`status-badge px-6 py-1 rounded-full text-[0.6rem] font-black tracking-[0.2em] border ${results.is_safe ? 'status-safe border-emerald-500/30' : 'status-danger border-red-500/30'}`}>
+                                            {results.is_safe ? "SAFE_GROUNDING_ESTABLISHED" : "HIGH_HALLUCINATION_RISK"}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {!results ? (
+                                    <div class="flex-1 flex flex-col items-center justify-center text-slate-500 opacity-30 gap-4">
+                                        <div class="text-6xl tracking-widest font-black uppercase">Standby</div>
+                                        <div class="text-xs tracking-widest">Awaiting Multimodal Input...</div>
+                                    </div>
+                                ) : (
+                                    <div class="grid md:grid-cols-2 gap-8 h-full">
+                                        <div class="space-y-4">
+                                            <div class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest mb-2">Simulated Low-Fidelity View</div>
+                                            <div class="aspect-square rounded-2xl overflow-hidden ring-1 ring-red-500/30 overflow-hidden relative group">
+                                                <img src={`data:image/jpeg;base64,${results.noisy_image_base64}`} className="w-full h-full object-cover" />
+                                                <div class="absolute inset-0 bg-gradient-to-t from-red-500/20 to-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <span class="text-[0.6rem] font-bold tracking-tighter">SIGMA_ARTIFACTS_DETECTED</span>
+                                                </div>
+                                            </div>
+                                            <div class="bg-black/40 p-4 rounded-xl border border-red-900/10">
+                                                <span class="text-[0.6rem] text-red-500 font-bold block mb-1">CORRUPTED_TEXT_PROXY</span>
+                                                <p class="text-sm text-slate-300 italic">{results.noisy_text_preview}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-6">
+                                            <div>
+                                                <div class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest mb-3">Meta-Cognitive Outcome</div>
+                                                <div class="bg-indigo-950/20 p-6 rounded-2xl border border-indigo-500/20 space-y-3">
+                                                    <div class="w-10 h-1 bg-indigo-500 rounded-full mb-4"></div>
+                                                    <p class="text-base font-semibold leading-relaxed text-indigo-100">{results.intervention}</p>
+                                                    <div class="text-[0.6rem] text-indigo-400 font-mono tracking-widest">EPISTEMIC_LOGITS: {(0.9 - sigma*0.5).toFixed(4)}</div>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <div class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-widest mb-3">Denoised Retrieval Candidate</div>
+                                                <div class="bg-white/5 border border-cyan-500/20 p-6 rounded-2xl text-center shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                                                    <h2 class="text-2xl font-black mb-1 accent-text">{results.top_result || "N/A"}</h2>
+                                                    <div class="text-[0.6rem] text-cyan-400 font-black tracking-widest uppercase mb-4">Similarity: 0.114 (NR-Reranked)</div>
+                                                    <div class="grid grid-cols-5 gap-1 h-1">
+                                                        {[...Array(5)].map((_, i) => <div key={i} class={`h-full rounded-full ${i < 4 ? 'bg-cyan-500' : 'bg-slate-800'}`}></div>)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.section>
+
+                            <section className="glass-card p-6">
+                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                                    LIVE HALLUCINATION FRONTIER MAP
+                                </h3>
+                                <div className="h-28 flex items-end justify-between gap-1 px-4">
+                                    {[...Array(24)].map((_, i) => (
+                                        <motion.div 
+                                            key={i} 
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${Math.max(20, 100 - i*4 + Math.random()*20)}%` }}
+                                            className={`w-full rounded-t-sm transition-colors duration-500 ${i/24 < sigma ? 'bg-red-500/50' : 'bg-blue-500/40'}`}
+                                            style={{ boxShadow: i/24 < sigma ? '0 0 10px rgba(239,68,68,0.2)' : 'none' }}
+                                        />
+                                    ))}
+                                </div>
+                                <div class="flex justify-between mt-4 text-[0.6rem] text-slate-500 font-bold uppercase tracking-[0.2em]">
+                                    <span>Signal Range (S)</span>
+                                    <span>Noise Density (Sigma)</span>
+                                </div>
+                            </section>
+                        </div>
+                    </main>
+
+                    <footer class="text-center pb-8 pt-4">
+                        <p class="text-[0.6rem] text-slate-600 font-bold tracking-[0.4em] uppercase">
+                            Sappymukherjee214 R&D Sentinel Framework // Research v1.0.4 // 2026
+                        </p>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

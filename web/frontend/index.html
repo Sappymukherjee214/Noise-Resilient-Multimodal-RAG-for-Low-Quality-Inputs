@@ -35,6 +35,9 @@
         const { motion, AnimatePresence } = window.Motion;
 
         function App() {
+            // DYNAMIC CLOUD BRIDGE: Detects if running on Vercel (Split) or Render (Unified)
+            const API_BASE = window.location.hostname === 'localhost' ? '' : (window.location.origin.includes('vercel.app') ? 'https://sentinel-nrmrag-api.onrender.com' : '');
+            
             const [text, setText] = useState('Navy Blue Polo Shirt');
             const [sigma, setSigma] = useState(0.2);
             const [image, setImage] = useState(null);
@@ -44,11 +47,11 @@
             const [samples, setSamples] = useState([]);
 
             useEffect(() => {
-                fetch('/samples')
+                fetch(`${API_BASE}/samples`)
                     .then(r => r.json())
                     .then(data => setSamples(data))
-                    .catch(e => console.error("API Offline?"));
-            }, []);
+                    .catch(e => console.error("Cloud API Offline or Binding..."));
+            }, [API_BASE]);
 
             const runInference = async () => {
                 setLoading(true);
@@ -58,7 +61,7 @@
                 if (image) formData.append('image', image);
 
                 try {
-                    const response = await fetch('/process', { method: 'POST', body: formData });
+                    const response = await fetch(`${API_BASE}/process`, { method: 'POST', body: formData });
                     const data = await response.json();
                     setResults(data);
                 } catch (err) {
@@ -72,7 +75,7 @@
 
             const selectSample = async (sample) => {
                 setText(sample.productDisplayName);
-                const response = await fetch(`/images/${sample.id}`);
+                const response = await fetch(`${API_BASE}/images/${sample.id}`);
                 const blob = await response.blob();
                 setImage(new File([blob], `${sample.id}.jpg`, { type: "image/jpeg" }));
                 setPreview(URL.createObjectURL(blob));

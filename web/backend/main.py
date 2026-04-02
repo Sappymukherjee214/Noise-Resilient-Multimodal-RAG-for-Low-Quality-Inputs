@@ -43,6 +43,16 @@ bridge = LatentDenoisingBridge()
 async def get_index():
     return FileResponse("web/frontend/index.html")
 
+@app.get("/images/{image_id}")
+async def get_dataset_image(image_id: str):
+    """Serves raw images from the Kaggle dataset cache for UI preview."""
+    # The loader stores the base path
+    base_path = loader.get_image_dir()
+    img_path = os.path.join(base_path, f"{image_id}.jpg")
+    if os.path.exists(img_path):
+        return FileResponse(img_path)
+    return {"error": "Image not found"}
+
 app.mount("/frontend", StaticFiles(directory="web/frontend"), name="frontend")
 
 @app.post("/process")
@@ -99,8 +109,9 @@ async def process_multimodal_query(
 def get_dataset_samples():
     """Returns a few real product items to the UI for testing."""
     df = loader.get_metadata()
-    samples = df.sample(min(len(df), 12)).to_dict('records')
-    return samples
+    # Filter for items that actually have images
+    samples = df.sample(min(len(df), 24))
+    return samples[['id', 'productDisplayName', 'baseColour', 'usage']].to_dict('records')
 
 if __name__ == "__main__":
     import uvicorn

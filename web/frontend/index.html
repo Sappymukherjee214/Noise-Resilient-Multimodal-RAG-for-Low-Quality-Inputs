@@ -12,11 +12,11 @@
         .glass-card { background: rgba(255, 255, 255, 0.03); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; transition: transform 0.3s ease; }
         .glass-card:hover { transform: translateY(-4px); border-color: #06b6d4; }
         .main-gradient { background: radial-gradient(circle at 50% -20%, #1e1b4b, #0a0e14); min-height: 100vh; }
-        .accent-text { background: linear-gradient(to right, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .accent-text { background: linear-gradient(to right, #60a5fa, #c084fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
         .status-safe { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
         .status-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-        .noise-slider { -webkit-appearance: none; width: 100%; height: 6px; background: #1e293b; border-radius: 9999px; outline: none; }
-        .noise-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #06b6d4; border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(6, 182, 212, 0.6); }
+        .noise-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: #1e293b; border-radius: 9999px; outline: none; }
+        .noise-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: #06b6d4; border-radius: 50%; cursor: pointer; box-shadow: 0 0 12px rgba(6, 182, 212, 0.6); }
     </style>
 </head>
 <body class="main-gradient p-8">
@@ -69,6 +69,14 @@
             };
 
             const triggerFileUpload = () => document.getElementById("fileInput").click();
+
+            const selectSample = async (sample) => {
+                setText(sample.productDisplayName);
+                const response = await fetch(`/images/${sample.id}`);
+                const blob = await response.blob();
+                setImage(new File([blob], `${sample.id}.jpg`, { type: "image/jpeg" }));
+                setPreview(URL.createObjectURL(blob));
+            };
 
             return (
                 <div className="max-w-7xl mx-auto space-y-8">
@@ -144,6 +152,26 @@
                                 >
                                     {loading ? "FUSING EMBEDDINGS..." : "EXECUTE RAG SENTINEL"}
                                 </button>
+                            </section>
+
+                            <section className="glass-card p-6 overflow-hidden">
+                                <h3 className="text-sm font-bold mb-4 flex items-center gap-2 opacity-60">
+                                    <span class="w-1.5 h-1.5 bg-slate-500 rounded-full"></span>
+                                    QUICK-SELECT RESEARCH GALLERY
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {samples.map((s, i) => (
+                                        <motion.div 
+                                            key={s.id} 
+                                            whileHover={{ scale: 1.05 }}
+                                            onClick={() => selectSample(s)}
+                                            className="bg-black/40 rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-blue-500/50 transition-colors"
+                                        >
+                                            <img src={`/images/${s.id}`} className="w-full h-24 object-cover opacity-60 hover:opacity-100 transition-opacity" />
+                                            <div class="p-2 text-[0.55rem] font-bold text-slate-500 truncate">{s.productDisplayName}</div>
+                                        </motion.div>
+                                    ))}
+                                </div>
                             </section>
                         </div>
 

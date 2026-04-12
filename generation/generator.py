@@ -3,7 +3,7 @@ import logging
 from generation.llm_client import LLMFactory
 from generation.prompt_manager import PromptManager
 from generation.optimizer import PromptOptimizer
-from retrieval.cache import CacheManager
+from retrieval_ops.cache import CacheManager
 
 logger = logging.getLogger(__name__)
 

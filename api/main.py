@@ -12,7 +12,7 @@ from PIL import Image
 from config.settings import settings
 from ingestion.dataset_manager import DatasetManager
 from preprocessing.cleaner import DataCleaner
-from retrieval.engine import RobustRetrievalEngine
+from retrieval_ops.engine import RobustRetrievalEngine
 from embeddings.manager import EmbeddingManager
 from vector_store.store import VectorStore
 from generation.generator import RAGGenerator

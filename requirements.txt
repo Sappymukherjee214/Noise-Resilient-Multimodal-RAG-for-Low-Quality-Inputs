@@ -14,3 +14,8 @@ tqdm
 fastapi
 uvicorn
 python-multipart
+pydantic
+pydantic-settings
+python-dotenv
+plotly
+pytest

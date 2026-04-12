@@ -117,30 +117,56 @@ In professional AI R&D, transparency and safety are paramount. The **Meta-Cognit
 
 ---
 
+## 🚀 Recent Reliability & Stability Updates (v3.1.0)
+
+We have recently implemented several critical enhancements to move the framework from a research prototype to a production-ready system:
+
+- **📦 Package Standardization**: Fully established Python package structure with `__init__.py` files across all modules, ensuring seamless integration and modular imports.
+- **🛡️ Enhanced Hallucination Filtering**: Refined the `HallucinationDetector` logic to clean punctuation and filter semantic stop words, significantly reducing false positives in faithfulness scoring.
+- **⚡ Lazy-Loading Architecture**: Implemented lazy loading for heavy dependencies (OpenCV, PIL) in the cleaning pipeline. This ensures the system remains responsive and can function even in highly memory-constrained environments.
+- **🎨 Multimodal Intelligence Dashboard**: Added a premium Streamlit dashboard for real-time query analysis, diagnostic visualization, and system health monitoring.
+- **🔧 Unified Metadata Governance**: Standardized metadata keys (e.g., `base_colour`) across the ingestion and generation pipelines to ensure data integrity during RAG retrieval.
+
+---
+
 ## 🔧 7. Implementation and Getting Started
 
 ### 1. Repository Installation
 
-Ensure you have Python 3.9+ installed and run:
+Ensure you have Python 3.10+ installed and run:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Running the Research Benchmark Suite
+### 2. System Initialization (Database Ingestion)
 
-This script executes the full Hallucination Frontier scan, calculates statistical significance, and generates the robustness plots.
+Download the Kaggle dataset and initialize the vector store index. This script is now optimized with standardized metadata keys.
 
 ```powershell
-python src/benchmarker.py
+python scripts/initialize_db.py
 ```
 
-### 3. Running the Adaptive Prototype (Single Sample)
+### 3. Launching the Production Stack
 
-Experience the **Epistemic Gating** in action on a random product from the Kaggle dataset.
+Start the FastAPI backend and the interactive Streamlit dashboard simultaneously:
+
+**Backend API (FastAPI):**
+```powershell
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+**Intelligence Dashboard (Streamlit):**
+```powershell
+streamlit run dashboard/app.py
+```
+
+### 4. Diagnostics & Smoke Testing
+
+To verify the system logic in resource-constrained environments without loading heavy ML models, use our new diagnostic suite:
 
 ```powershell
-python src/app.py
+python scripts/smoke_test.py
 ```
 
 ---

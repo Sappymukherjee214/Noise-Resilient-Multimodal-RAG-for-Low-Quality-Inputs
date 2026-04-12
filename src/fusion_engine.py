@@ -3,6 +3,7 @@
 import numpy as np
 import cv2
 from PIL import Image
+from typing import Any
 
 class DynamicQualityEstimator:
     """Estimates modality reliability (SNR proxy) for noise-aware fusion."""

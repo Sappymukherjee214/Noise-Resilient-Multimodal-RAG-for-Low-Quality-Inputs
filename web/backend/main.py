@@ -12,13 +12,12 @@ import sys
 
 # Add project root to sys.path for core research modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
 
-from noise_engine import apply_multimodal_noise
-from fusion_engine import AdaptiveMultimodalFusion
-from retrieval import RobustRetriever
-from data_loader import FashionDataLoader
-from mcl import MetaCognitiveLoop, LatentDenoisingBridge
+from src.noise_engine import apply_multimodal_noise
+from src.fusion_engine import AdaptiveMultimodalFusion
+from src.retrieval import RobustRetriever
+from src.data_loader import FashionDataLoader
+from src.mcl import MetaCognitiveLoop, LatentDenoisingBridge
 
 import threading
 

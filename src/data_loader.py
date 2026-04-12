@@ -67,8 +67,15 @@ class FashionDataLoader:
         
         return description, image, metadata
 
+    def get_metadata(self) -> pd.DataFrame:
+        return self.styles_df
+
+    def get_image_dir(self) -> str:
+        return self.images_dir
+
     def get_random_sample(self) -> Tuple[str, Image.Image, Dict]:
         import random
+        if self.styles_df is None: return None
         idx = random.randint(0, len(self.styles_df) - 1)
         return self.get_sample(idx)
 

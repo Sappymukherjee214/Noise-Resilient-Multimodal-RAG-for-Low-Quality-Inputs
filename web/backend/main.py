@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import torch
+# import torch
 import numpy as np
 from PIL import Image
 import io
@@ -33,20 +33,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Shared Research Components
-loader = FashionDataLoader()
-fusion = AdaptiveMultimodalFusion()
-retriever = RobustRetriever()
-mcl = MetaCognitiveLoop()
-bridge = LatentDenoisingBridge()
+# Shared Research Components (Lazy Loaded)
+_system_state = {
+    "loader": FashionDataLoader(),
+    "fusion": None,
+    "retriever": None,
+    "mcl": None,
+    "bridge": None
+}
 
-# ASYNC CLOUD LOADING: Prevents Render Port Scan Timeout
+def get_state():
+    if _system_state["fusion"] is None:
+        print("[System]: Lazy-loading research components...")
+        _system_state["fusion"] = AdaptiveMultimodalFusion()
+        _system_state["retriever"] = RobustRetriever()
+        _system_state["mcl"] = MetaCognitiveLoop()
+        _system_state["bridge"] = LatentDenoisingBridge()
+    return _system_state
+
+# ASYNC CLOUD LOADING
 def background_load():
     print("[System]: Beginning Asynchronous Cloud Initialization...")
-    loader.download_and_init()
-    print("[System]: Cloud Initialization Complete. Dataset ready.")
+    _system_state["loader"].download_and_init()
+    print("[System]: Cloud Initialization Complete.")
 
-# Fire and forget the heavy download/init
 threading.Thread(target=background_load, daemon=True).start()
 
 @app.get("/")
@@ -55,9 +65,8 @@ async def get_index():
 
 @app.get("/images/{image_id}")
 async def get_dataset_image(image_id: str):
-    """Serves raw images from the Kaggle dataset cache for UI preview."""
-    # The loader stores the base path
-    base_path = loader.get_image_dir()
+    base_path = _system_state["loader"].get_image_dir()
+    if not base_path: return {"error": "Dataset not loaded"}
     img_path = os.path.join(base_path, f"{image_id}.jpg")
     if os.path.exists(img_path):
         return FileResponse(img_path)
@@ -68,35 +77,35 @@ app.mount("/frontend", StaticFiles(directory="web/frontend"), name="frontend")
 @app.post("/process")
 async def process_multimodal_query(
     text: str = Form(...),
-    sigma: float = Form(0.2), # Noise level slider
+    sigma: float = Form(0.2),
     image: UploadFile = File(None)
 ):
-    """Processes a multimodal query and returns diagnostic RAG results."""
+    import torch
+    state = get_state()
     
     # 1. Load Image
     if image:
         img_bytes = await image.read()
         pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     else:
-        # Fallback to a neutral placeholder logic if needed
         pil_img = Image.new('RGB', (224, 224), color = (73, 109, 137))
 
     # 2. Inject Controlled Noise
     noisy_text, noisy_img = apply_multimodal_noise(text, pil_img, sigma=sigma)
     
-    # 3. Simulate Embeddings (Research Proxy)
+    # 3. Simulate Embeddings
     t_emb = torch.randn(512) 
     v_emb = torch.randn(512)
     
-    # 4. Adaptive Fusion (ENG + MAC)
-    fused_emb = fusion.fuse_embeddings(t_emb, v_emb, noisy_text, noisy_img)
+    # 4. Adaptive Fusion
+    fused_emb = state["fusion"].fuse_embeddings(t_emb, v_emb, noisy_text, noisy_img)
     
     # 5. Retrieval & MCL
-    top_results = retriever.search(fused_emb, top_k=5)
-    is_safe = mcl.evaluate_retrieval_safety(top_results)
-    intervention = mcl.generate_intervention_strategy(is_safe)
+    top_results = state["retriever"].search(fused_emb, top_k=5)
+    is_safe = state["mcl"].evaluate_retrieval_safety(top_results)
+    intervention = state["mcl"].generate_intervention_strategy(is_safe)
     
-    # 6. Encode Image for UI preview
+    # 6. Encode Image
     buffered = io.BytesIO()
     noisy_img.save(buffered, format="JPEG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -111,14 +120,15 @@ async def process_multimodal_query(
         "all_scores": top_results,
         "diagnostics": {
             "noise_level": sigma,
-            "fusion_tau": fusion.calculate_meta_tau([0.5, 0.5]) # Proxy
+            "fusion_tau": state["fusion"].calculate_meta_tau([0.5, 0.5])
         }
     }
 
 @app.get("/samples")
 def get_dataset_samples():
     """Returns a few real product items to the UI for testing."""
-    df = loader.get_metadata()
+    df = _system_state["loader"].get_metadata()
+    if df is None: return []
     # Filter for items that actually have images
     samples = df.sample(min(len(df), 24))
     return samples[['id', 'productDisplayName', 'baseColour', 'usage']].to_dict('records')

@@ -1,11 +1,13 @@
-import torch
-import torch.nn.functional as F
-from typing import List, Tuple, Dict
+# import torch
+# import torch.nn.functional as F
+from typing import List, Tuple, Dict, Any
 
 class RobustRetriever:
     """Simulates a noise-tolerant vector store with soft-constraint retrieval."""
 
     def __init__(self, embedding_dim: int = 512):
+        import torch
+        import torch.nn.functional as F
         self.embedding_dim = embedding_dim
         # Placeholder for simulated knowledge base
         self.vector_store = torch.randn(100, embedding_dim)
@@ -13,18 +15,18 @@ class RobustRetriever:
         self.vector_store = F.normalize(self.vector_store, p=2, dim=1)
         self.metadata = {i: f"Document_{i}" for i in range(100)}
 
-    def apply_information_bottleneck(self, emb: torch.Tensor, beta: float = 0.01) -> torch.Tensor:
+    def apply_information_bottleneck(self, emb: Any, beta: float = 0.01) -> Any:
         """Symmetric Information Bottleneck (SIB) to filter non-semantic noise."""
-        # Conceptually: Pushes the embedding towards a more compressed representation
-        # that preserves mutual information with the clean cluster.
-        # Implementation: Soft-thresholding on latent variance.
+        import torch
+        import torch.nn.functional as F
         noise_mask = torch.abs(emb) < beta
         denoised_emb = emb.clone()
         denoised_emb[noise_mask] = 0
         return F.normalize(denoised_emb, p=2, dim=-1)
 
-    def search(self, fused_embedding: torch.Tensor, top_k: int = 5) -> List[Tuple[str, float]]:
+    def search(self, fused_embedding: Any, top_k: int = 5) -> List[Tuple[str, float]]:
         """Cosine similarity-based retrieval with Information Bottleneck filtering."""
+        import torch
         
         # 1. Apply SIB Denoising
         processed_emb = self.apply_information_bottleneck(fused_embedding)

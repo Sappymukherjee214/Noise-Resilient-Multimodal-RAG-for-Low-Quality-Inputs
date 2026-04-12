@@ -1,5 +1,5 @@
-import torch
-import torch.nn.functional as F
+# import torch
+# import torch.nn.functional as F
 import numpy as np
 import cv2
 from PIL import Image
@@ -38,31 +38,30 @@ class AdaptiveMultimodalFusion:
         self.dqe = DynamicQualityEstimator()
         self.tau = 0.5  # Softness of the gate
 
-    def compute_epistemic_uncertainty(self, emb: torch.Tensor) -> float:
+    def compute_epistemic_uncertainty(self, emb: Any) -> float:
         """Estimates 'Semantic Entropy' in the embedding (simplified proxy)."""
-        # In research context, this would involve MC Dropout or Fisher Information
-        # Here we use an original proxy: Local Energy Variance in latent space
+        import torch
         return torch.std(emb).item()
 
     def calculate_meta_tau(self, q_scores: list) -> float:
         """Meta-Attention Calibration (MAC)."""
-        # Dynamically optimizes the gating temperature (tau) based on SNR.
-        # High SNR -> low tau (sharper gating), Low SNR -> high tau (softer gating).
         snr = sum(q_scores) / len(q_scores)
-        return 1.0 - (0.8 * snr)  # Heuristic for tau optimization
+        return 1.0 - (0.8 * snr)
 
-    def fuse_embeddings(self, t_emb: torch.Tensor, v_emb: torch.Tensor, 
-                        t_raw: str, v_raw: Image.Image) -> torch.Tensor:
+    def fuse_embeddings(self, t_emb: Any, v_emb: Any, 
+                        t_raw: str, v_raw: Image.Image) -> Any:
         """Epistemic Noise Gating with Meta-Attention Calibration (MAC)."""
+        import torch
+        import torch.nn.functional as F
         
-        # 1. Quality Priors (from DQE)
+        # 1. Quality Priors
         t_q = self.dqe.estimate_text_reliability(t_raw)
         v_q = self.dqe.estimate_image_reliability(v_raw)
         
         # 2. Meta-Attention Calibration
         tau = self.calculate_meta_tau([t_q, v_q])
         
-        # 3. Epistemic Verification (from Embedding Space)
+        # 3. Epistemic Verification
         t_u = self.compute_epistemic_uncertainty(t_emb)
         v_u = self.compute_epistemic_uncertainty(v_emb)
         
@@ -70,13 +69,11 @@ class AdaptiveMultimodalFusion:
         t_score = t_q / (t_u + 1e-6)
         v_score = v_q / (v_u + 1e-6)
         
-        # 5. KL-Divergence based Adaptive Softmax using MAC Tau
+        # 5. Adaptive Softmax using MAC Tau
         scores = torch.tensor([t_score, v_score])
         weights = F.softmax(scores / tau, dim=0)
         
         alpha, beta = weights[0], weights[1]
-        
-        # Late fusion with adaptive reliability weights
         fused_emb = alpha * t_emb + beta * v_emb
         
         return F.normalize(fused_emb, p=2, dim=-1)

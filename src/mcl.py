@@ -1,5 +1,4 @@
-import torch
-import torch.nn.functional as F
+from typing import Any
 
 class MetaCognitiveLoop:
     """An elite-tier safety layer that 'decides' if retrieval is trustworthy."""
@@ -32,9 +31,11 @@ class MetaCognitiveLoop:
 class LatentDenoisingBridge:
     """Synthesizes high-fidelity query fragments using CMR."""
 
-    def reconstruct_latent_space(self, noisy_emb: torch.Tensor, guidance_emb: torch.Tensor, 
-                                 alpha: float = 0.7) -> torch.Tensor:
+    def reconstruct_latent_space(self, noisy_emb: Any, guidance_emb: Any, 
+                                 alpha: float = 0.7) -> Any:
         """Cross-modal Reconstruction (CMR) Logic."""
+        import torch
+        import torch.nn.functional as F
         # Using the guidance modality to 'steer' the noisy modality 
         # towards its clean latent neighborhood.
         reconstructed = (1 - alpha) * noisy_emb + alpha * guidance_emb

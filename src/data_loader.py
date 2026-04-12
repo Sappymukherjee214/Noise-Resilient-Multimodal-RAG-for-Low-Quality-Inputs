@@ -15,6 +15,12 @@ class FashionDataLoader:
     def download_and_init(self):
         """Downloads the Kaggle dataset if needed and initializes metadata."""
         import kagglehub
+        
+        # 1. Credential Check for Cloud Deployment
+        if not os.environ.get("KAGGLE_USERNAME") or not os.environ.get("KAGGLE_KEY"):
+            print("[System-Warning]: KAGGLE_USERNAME or KAGGLE_KEY not found.")
+            print("[System-Warning]: If download fails, set credentials in your secrets manager/dashboard.")
+
         try:
             self.dataset_path = kagglehub.dataset_download("paramaggarwal/fashion-product-images-small")
             print(f"[System]: Dataset located at: {self.dataset_path}")

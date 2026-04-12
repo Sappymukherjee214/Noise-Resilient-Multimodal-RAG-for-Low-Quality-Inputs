@@ -2,7 +2,7 @@ services:
   - type: web
     name: sentinel-nrmrag-api
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python -m nltk.downloader wordnet
     startCommand: uvicorn web.backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: IS_PRODUCTION
